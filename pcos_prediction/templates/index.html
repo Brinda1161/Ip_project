@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCOS Risk Assessment Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cae;
+            --accent-color: #ff7e5f;
+            --light-bg: #f8f9fa;
+            --dark-text: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        h3 {
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control, .form-select {
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(74, 111, 165, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #ff6a45;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .progress-container {
+            margin-top: 1.5rem;
+            display: none;
+        }
+        
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        
+        .progress-bar {
+            background-color: var(--accent-color);
+            transition: width 2s ease;
+        }
+        
+        .info-icon {
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+        
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 0.5rem 1rem;
+        }
+        
+        .risk-meter {
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, #4CAF50, #FFC107, #F44336);
+            border-radius: 10px;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .risk-indicator {
+            position: absolute;
+            top: -10px;
+            width: 2px;
+            height: 40px;
+            background-color: #000;
+            transform: translateX(-50%);
+        }
+        
+        .risk-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--dark-text);
+        }
+        
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(74, 111, 165, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .feature-item:hover {
+            background-color: rgba(74, 111, 165, 0.05);
+        }
+        
+        .feature-text {
+            flex: 1;
+        }
+        
+        .feature-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .nav-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .nav-buttons {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-buttons">
+        <a href="user-history.html" class="btn btn-outline-primary">View History</a>
+        <a href="login.html" class="btn btn-outline-secondary">Logout</a>
+    </div>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-lg">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="text-center text-white mb-0">PCOS Risk Assessment Tool</h3>
+                            <span class="badge bg-light text-primary">v1.0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Complete this form to assess your risk of Polycystic Ovary Syndrome (PCOS). All fields are required.</p>
+                        
+                        <form id="pcosForm">
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="age" class="form-label">Age (years)</label>
+                                    <input type="number" class="form-control" id="age" min="15" max="50" required>
+                                    <div class="form-text">Enter your current age between 15-50</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="bmi" class="form-label">BMI Category 
+                                        <span class="info-icon" data-bs-toggle="tooltip" title="Body Mass Index categories based on WHO standards">ⓘ</span>
+                                    </label>
+                                    <select class="form-select" id="bmi" required>
+                                        <option value="">Select your BMI category</option>
+                                        <option value="Underweight">Underweight (&lt;18.5)</option>
+                                        <option value="Normal">Normal (18.5-24.9)</option>
+                                        <option value="Overweight">Overweight (25-29.9)</option>
+                                        <option value="Obese">Obese (≥30)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="hirsutism" class="form-label">Hirsutism (excessive hair growth)
+                                        <span class="info-icon" data-bs-toggle="tooltip" title="Male-pattern hair growth on face, chest or back">ⓘ</span>
+                                    </label>
+                                    <select class="form-select" id="hirsutism" required>
+                                        <option value="">Select</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="acne" class="form-label">Persistent Acne</label>
+                                    <select class="form-select" id="acne" required>
+                                        <option value="">Select</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="menstrual" class="form-label">Menstrual Cycle Regularity</label>
+                                    <select class="form-select" id="menstrual" required>
+                                        <option value="">Select</option>
+                                        <option value="Yes">Regular (21-35 day cycles)</option>
+                                        <option value="No">Irregular (less than 21 or more than 35 days between periods)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="familyHistory" class="form-label">Family History of PCOS</label>
+                                    <select class="form-select" id="familyHistory" required>
+                                        <option value="">Select</option>
+                                        <option value="Yes">Yes (mother or sister with PCOS)</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="waistHipRatio" class="form-label">Waist-Hip Ratio 
+                                        <span class="info-icon" data-bs-toggle="tooltip" title="Waist circumference divided by hip circumference">ⓘ</span>
+                                    </label>
+                                    <input type="number" step="0.01" class="form-control" id="waistHipRatio" min="0.6" max="1.2" required>
+                                    <div class="form-text">Normal range: 0.7-0.85 for women</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="amh" class="form-label">AMH Level (ng/mL)
+                                        <span class="info-icon" data-bs-toggle="tooltip" title="Anti-Müllerian Hormone level from blood test">ⓘ</span>
+                                    </label>
+                                    <input type="number" step="0.01" class="form-control" id="amh" min="0" max="20" required>
+                                    <div class="form-text">Normal range: 1.0-3.5 ng/mL</div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fastingGlucose" class="form-label">Fasting Glucose (mg/dL)</label>
+                                    <input type="number" class="form-control" id="fastingGlucose" min="50" max="300" required>
+                                    <div class="form-text">Normal range: 70-100 mg/dL</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="fastingInsulin" class="form-label">Fasting Insulin (μIU/mL)</label>
+                                    <input type="number" class="form-control" id="fastingInsulin" min="0" max="50" required>
+                                    <div class="form-text">Normal range: 2-19 μIU/mL</div>
+                                </div>
+                            </div>
+
+                            <div class="progress-container animate__animated animate__fadeIn">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <p class="text-center mt-2">Analyzing your data...</p>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary py-3">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    Assess My PCOS Risk
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="result" class="mt-4 animate__animated animate__fadeIn d-none">
+                            <div class="alert alert-info border-start-4">
+                                <h4 class="alert-heading d-flex align-items-center">
+                                    <i class="fas fa-chart-line me-2"></i> 
+                                    <span>Your PCOS Risk Assessment</span>
+                                </h4>
+                                
+                                <div class="risk-meter">
+                                    <div class="risk-indicator" id="riskIndicator"></div>
+                                </div>
+                                <div class="risk-labels">
+                                    <span>Low Risk</span>
+                                    <span>Moderate Risk</span>
+                                    <span>High Risk</span>
+                                </div>
+                                
+                                <p id="predictionText" class="my-3"></p>
+                                
+                                <div id="keyFactors" class="mt-3">
+                                    <h5 class="mb-3">Key Contributing Factors:</h5>
+                                    <div id="factorsList"></div>
+                                </div>
+                                
+                                <hr>
+                                <div id="recommendations">
+                                    <h5 class="mb-3">Recommendations:</h5>
+                                    <div id="recommendationText"></div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+    <button id="resetBtn" class="btn btn-outline-primary me-2">Perform Another Assessment</button>
+    <button id="recommendationBtn" class="btn btn-primary">View Detailed Recommendations</button>
+</div>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-light">
+                        <div class="text-center text-muted small">
+                            <p class="mb-0">This tool provides a preliminary assessment only and is not a substitute for professional medical advice.</p>
+                            <p>Consult your healthcare provider for proper diagnosis and treatment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Form submission handler
+            document.getElementById('pcosForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const spinner = submitBtn.querySelector('.spinner-border');
+                const progressContainer = document.querySelector('.progress-container');
+                
+                submitBtn.disabled = true;
+                spinner.classList.remove('d-none');
+                progressContainer.style.display = 'block';
+                
+                // Get form data
+                const formData = {
+                    age: document.getElementById('age').value,
+                    bmi: document.getElementById('bmi').value,
+                    hirsutism: document.getElementById('hirsutism').value,
+                    acne: document.getElementById('acne').value,
+                    menstrual: document.getElementById('menstrual').value,
+                    familyHistory: document.getElementById('familyHistory').value,
+                    waistHipRatio: document.getElementById('waistHipRatio').value,
+                    amh: document.getElementById('amh').value,
+                    fastingGlucose: document.getElementById('fastingGlucose').value,
+                    fastingInsulin: document.getElementById('fastingInsulin').value
+                };
+                
+                // Calculate risk
+                const riskPercentage = calculateRisk(formData);
+                const riskLevel = riskPercentage < 30 ? 'low' : riskPercentage < 60 ? 'moderate' : 'high';
+                
+                // Store assessment in history
+                const currentUser = localStorage.getItem('currentUser');
+                const loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+                
+                const assessmentEntry = {
+                    username: currentUser,
+                    timestamp: new Date().toISOString(),
+                    type: 'assessment',
+                    riskPercentage: riskPercentage,
+                    riskLevel: riskLevel,
+                    formData: formData
+                };
+                
+                loginHistory.push(assessmentEntry);
+                localStorage.setItem('loginHistory', JSON.stringify(loginHistory));
+                
+                // Simulate processing (in a real app, this would be your AJAX call)
+                const progressBar = document.querySelector('.progress-bar');
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => showResults(riskPercentage, riskLevel), 500);
+                    }
+                }, 100);
+            });
+            
+            // Reset button handler
+            document.getElementById('resetBtn')?.addEventListener('click', function() {
+                document.getElementById('pcosForm').reset();
+                document.getElementById('result').classList.add('d-none');
+                document.querySelector('.progress-container').style.display = 'none';
+                document.querySelector('button[type="submit"]').disabled = false;
+                document.querySelector('.spinner-border').classList.add('d-none');
+            });
+        });
+        
+        function calculateRisk(formData) {
+            // Simplified risk calculation - replace with your actual algorithm
+            let score = 0;
+            
+            if (formData.bmi === 'Overweight') score += 15;
+            if (formData.bmi === 'Obese') score += 25;
+            if (formData.hirsutism === 'Yes') score += 20;
+            if (formData.menstrual === 'No') score += 25;
+            if (formData.familyHistory === 'Yes') score += 15;
+            if (formData.amh > 3.5) score += 10;
+            
+            return Math.min(score, 95); // Cap at 95%
+        }
+        
+        function showResults(riskPercentage, riskLevel) {
+            // Position the risk indicator
+            const indicator = document.getElementById('riskIndicator');
+            indicator.style.left = `${riskPercentage}%`;
+            
+            // Set prediction text
+            const predictionText = document.getElementById('predictionText');
+            predictionText.innerHTML = `
+                <strong>Based on your inputs, your PCOS risk is <span class="text-${getRiskColor(riskLevel)}">${riskLevel} (${riskPercentage}%)</span>.</strong>
+                ${getRiskDescription(riskLevel)}
+            `;
+            
+            // Generate key factors
+            const factorsList = document.getElementById('factorsList');
+            factorsList.innerHTML = generateKeyFactors();
+            
+            // Generate recommendations
+            const recommendationText = document.getElementById('recommendationText');
+            recommendationText.innerHTML = generateRecommendations(riskLevel);
+            
+            // Show results
+            document.getElementById('result').classList.remove('d-none');
+            document.getElementById('result').classList.add('animate__fadeIn');
+            
+            // Scroll to results
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function getRiskColor(riskLevel) {
+            return {
+                'low': 'success',
+                'moderate': 'warning',
+                'high': 'danger'
+            }[riskLevel];
+        }
+        
+        function getRiskDescription(riskLevel) {
+            return {
+                'low': 'Your risk of having PCOS appears to be relatively low based on the information provided. However, if you have concerns about your symptoms, please consult a healthcare provider.',
+                'moderate': 'You show some indicators that may be associated with PCOS. We recommend consulting with a healthcare provider for further evaluation and possibly diagnostic testing.',
+                'high': 'Your responses suggest several indicators commonly associated with PCOS. We strongly recommend scheduling an appointment with a healthcare provider for proper evaluation, diagnosis, and treatment options.'
+            }[riskLevel];
+        }
+        
+        function generateKeyFactors() {
+            const factors = [
+                { name: 'BMI', value: document.getElementById('bmi').value || 'Not provided', impact: 'High' },
+                { name: 'Menstrual Regularity', value: document.getElementById('menstrual').value === 'No' ? 'Irregular' : 'Regular', impact: 'High' },
+                { name: 'AMH Level', value: document.getElementById('amh').value ? document.getElementById('amh').value + ' ng/mL' : 'Not provided', impact: 'Medium' },
+                { name: 'Insulin Levels', value: document.getElementById('fastingInsulin').value ? document.getElementById('fastingInsulin').value + ' μIU/mL' : 'Not provided', impact: 'Medium' }
+            ];
+            
+            return factors.map(factor => `
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-${getFactorIcon(factor.name)}"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>${factor.name}</strong>: <span class="feature-value">${factor.value}</span>
+                        <div class="text-muted small">Impact: ${factor.impact}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getFactorIcon(factorName) {
+            const icons = {
+                'BMI': 'weight',
+                'Menstrual Regularity': 'calendar-alt',
+                'AMH Level': 'flask',
+                'Insulin Levels': 'syringe'
+            };
+            return icons[factorName] || 'info-circle';
+        }
+
+        // Recommendation button handler
+document.getElementById('recommendationBtn')?.addEventListener('click', function() {
+    // Get the current risk level
+    const riskLevel = document.querySelector('#predictionText').textContent.includes('High') ? 'high' : 
+                     document.querySelector('#predictionText').textContent.includes('Moderate') ? 'moderate' : 'low';
+    
+    // Store the risk level in localStorage to use on the recommendations page
+    localStorage.setItem('pcosRiskLevel', riskLevel);
+    
+    // Redirect to recommendations page
+    window.location.href = 'http://127.0.0.1:5500/pcos_prediction/templates/recommend.html';
+});
+        
+        function generateRecommendations(riskLevel) {
+            const general = `
+                <div class="feature-item mb-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>Lifestyle Changes</strong>: Maintain a balanced diet and regular exercise routine to help manage symptoms.
+                    </div>
+                </div>
+                <div class="feature-item mb-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>Menstrual Tracking</strong>: Keep a record of your menstrual cycles to identify patterns or irregularities.
+                    </div>
+                </div>
+            `;
+            
+            const moderate = riskLevel === 'moderate' || riskLevel === 'high' ? `
+                <div class="feature-item mb-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>Blood Tests</strong>: Consider requesting hormone level tests (LH, FSH, testosterone) and glucose tolerance tests from your doctor.
+                    </div>
+                </div>
+            ` : '';
+            
+            const high = riskLevel === 'high' ? `
+                <div class="feature-item mb-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>Specialist Consultation</strong>: Schedule an appointment with an endocrinologist or gynecologist specializing in PCOS.
+                    </div>
+                </div>
+                <div class="feature-item mb-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-ultrasound"></i>
+                    </div>
+                    <div class="feature-text">
+                        <strong>Ultrasound Examination</strong>: Your doctor may recommend a pelvic ultrasound to check for ovarian cysts.
+                    </div>
+                </div>
+            ` : '';
+            
+            return general + moderate + high;
+        }
+        
+    </script>
+</body>
+</html>
